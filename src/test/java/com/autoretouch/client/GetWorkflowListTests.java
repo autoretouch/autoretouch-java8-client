@@ -54,8 +54,6 @@ public class GetWorkflowListTests {
 
         DeviceAuthorization authorization = blankClient.getDeviceAuthorization();
 
-        assertThat(authorization.getAccessToken()).isNotNull();
-        assertThat(authorization.getIdToken()).isNotNull();
         assertThat(authorization.getRefreshToken()).isNotNull();
         assertThat(authorization.getType()).isEqualTo("Bearer");
         assertThat(authorization.getClientId()).isEqualTo(CLIENT_ID);
@@ -66,12 +64,15 @@ public class GetWorkflowListTests {
         writer.writeValue(deviceAuthFile, authorization);
 
         DeviceAuthorization loadedDeviceAuth = objectMapper.readValue(deviceAuthFile, DeviceAuthorization.class);
-        loadedDeviceAuth.setAccessToken(null);
 
         Client clientWithGivenAuthInformation = createDevClient()
                 .withDeviceAuth(loadedDeviceAuth);
 
-        clientWithGivenAuthInformation.refreshAccessToken();
+        DeviceAuthorization refreshedAuthorization = clientWithGivenAuthInformation.getDeviceAuthorization();
+        assertThat(refreshedAuthorization.getRefreshToken()).isNotNull();
+        assertThat(refreshedAuthorization.getType()).isEqualTo("Bearer");
+        assertThat(refreshedAuthorization.getClientId()).isEqualTo(CLIENT_ID);
+
 
         assertThat(clientWithGivenAuthInformation.getWorkflows()).isNotEmpty();
     }
@@ -87,13 +88,12 @@ public class GetWorkflowListTests {
     }
 
 
-
     private class Client {
         private final RestTemplate restTemplate = new RestTemplate();
         private String apiServer = "https://api.autoretouch.com/";
         private String authServer = "https://auth.autoretouch.com/";
         private String clientId = "V8EkfbxtBi93cAySTVWAecEum4d6pt4J";
-        private String audience = "https://api.autoretouch.com/";
+        private String audience = "https://api.autoretouch.com";
         private String authType = "Bearer";
         private String scope = "offline_access openid";
         private String accessToken = null;
@@ -176,8 +176,10 @@ public class GetWorkflowListTests {
         }
 
         public Client logIn() {
-            if (this.accessToken == null) {
+            if (this.accessToken == null && refreshToken == null) {
                 return requestDeviceAuth();
+            } else if (this.accessToken == null) {
+                return refreshAccessToken();
             }
             return this;
         }
@@ -208,8 +210,6 @@ public class GetWorkflowListTests {
 
         public DeviceAuthorization getDeviceAuthorization() {
             DeviceAuthorization result = new DeviceAuthorization();
-            result.setAccessToken(accessToken);
-            result.setIdToken(idToken);
             result.setRefreshToken(refreshToken);
             result.setType(authType);
             result.setClientId(clientId);
@@ -217,12 +217,10 @@ public class GetWorkflowListTests {
         }
 
         public Client withDeviceAuth(DeviceAuthorization authorization) {
-            this.accessToken = authorization.getAccessToken();
             this.refreshToken = authorization.getRefreshToken();
-            this.idToken = authorization.getIdToken();
             this.clientId = authorization.getClientId();
             this.authType = authorization.getType();
-            return this;
+            return refreshAccessToken();
         }
 
         public Client api(String apiServer) {

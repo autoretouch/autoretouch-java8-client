@@ -12,7 +12,9 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -38,6 +40,18 @@ public class WorkflowExecutionIT {
         assertThatCurrentBalanceIsReducedByTheCostOfOneWorkflowExecution(initialBalance);
         WorkflowExcution finishedExecution = getFinishedWorkflowExcutionResult(executionId);
         downloadResultToTemporaryFile(finishedExecution);
+    }
+
+    @Test
+    void shouldReturnListOfAllExecutionsOfWorkflowContainingTheNewlyTriggeredExecution() {
+        String executionId = startExecutionWithGivenSampleImage();
+        List<WorkflowExcution> executions = underTest.getLatestWorkflowExecutions(givenWorkflow.getId());
+        assertThatExecutionListContainsExecutionOnce(executionId, executions);
+    }
+
+    private void assertThatExecutionListContainsExecutionOnce(String executionId, List<WorkflowExcution> executions) {
+        assertThat(executions).isNotEmpty();
+        assertThat(executions.stream().map(WorkflowExcution::getId).collect(Collectors.toList())).containsOnlyOnce(executionId);
     }
 
     private void downloadResultToTemporaryFile(WorkflowExcution finishedExecution) throws IOException {

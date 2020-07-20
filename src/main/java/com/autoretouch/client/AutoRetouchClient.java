@@ -194,4 +194,11 @@ class AutoRetouchClient {
         headers.set("Authorization", "Bearer " + accessToken);
         return headers;
     }
+
+    public List<WorkflowExcution> getLatestWorkflowExecutions(String workflowId) {
+        HttpEntity<Void> request = new HttpEntity<>(createAuthorizedHeaders());
+        return restTemplate.exchange(apiServer + "workflow/execution?workflow=" + workflowId, HttpMethod.GET, request, new ParameterizedTypeReference<Page<WorkflowExcution>>(){})
+                .getBody()
+                .getEntries();
+    }
 }

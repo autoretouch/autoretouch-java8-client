@@ -37,7 +37,7 @@ public class GetWorkflowListTests {
 
     @Test
     void shouldGetListOfAllWorkflows() {
-        Client underTest = createDevClient().logIn();
+        AutoRetouchClient underTest = createDevClient().logIn();
 
         waitForUserToAuthViaBrowser(underTest);
 
@@ -48,7 +48,7 @@ public class GetWorkflowListTests {
 
     @Test
     void shouldLoadCredentialsFromDisk() throws IOException {
-        Client blankClient = createDevClient().logIn();
+        AutoRetouchClient blankClient = createDevClient().logIn();
 
         waitForUserToAuthViaBrowser(blankClient);
 
@@ -65,7 +65,7 @@ public class GetWorkflowListTests {
 
         DeviceAuthorization loadedDeviceAuth = objectMapper.readValue(deviceAuthFile, DeviceAuthorization.class);
 
-        Client clientWithGivenAuthInformation = createDevClient()
+        AutoRetouchClient clientWithGivenAuthInformation = createDevClient()
                 .withDeviceAuth(loadedDeviceAuth);
 
         DeviceAuthorization refreshedAuthorization = clientWithGivenAuthInformation.getDeviceAuthorization();
@@ -77,18 +77,18 @@ public class GetWorkflowListTests {
         assertThat(clientWithGivenAuthInformation.getWorkflows()).isNotEmpty();
     }
 
-    private void waitForUserToAuthViaBrowser(Client underTest) {
+    private void waitForUserToAuthViaBrowser(AutoRetouchClient underTest) {
         await().atMost(underTest.deviceCodeExpiresIn, TimeUnit.SECONDS)
                 .pollInterval(underTest.refreshInterval, TimeUnit.SECONDS)
                 .untilAsserted(() -> assertThat(underTest.requestAuthToken()).isTrue());
     }
 
-    private Client createDevClient() {
-        return new Client().id(CLIENT_ID).audience(AUDIENCE).api(API_SERVER).authServer(AUTH_SERVER);
+    private AutoRetouchClient createDevClient() {
+        return new AutoRetouchClient().id(CLIENT_ID).audience(AUDIENCE).api(API_SERVER).authServer(AUTH_SERVER);
     }
 
 
-    private class Client {
+    private class AutoRetouchClient {
         private final RestTemplate restTemplate = new RestTemplate();
         private String apiServer = "https://api.autoretouch.com/";
         private String authServer = "https://auth.autoretouch.com/";
@@ -104,30 +104,30 @@ public class GetWorkflowListTests {
         public int deviceCodeExpiresIn = -1;
         public int refreshInterval = -1;
 
-        public Client() {
+        public AutoRetouchClient() {
         }
 
-        public Client id(String id) {
+        public AutoRetouchClient id(String id) {
             clientId = id;
             return this;
         }
 
-        public Client audience(String audience) {
+        public AutoRetouchClient audience(String audience) {
             this.audience = audience;
             return this;
         }
 
-        public Client scope(String scope) {
+        public AutoRetouchClient scope(String scope) {
             this.scope = scope;
             return this;
         }
 
-        public Client useCommandLineOnly() {
+        public AutoRetouchClient useCommandLineOnly() {
             commandLineOnly = true;
             return this;
         }
 
-        public Client requestDeviceAuth() {
+        public AutoRetouchClient requestDeviceAuth() {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
             MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
@@ -175,7 +175,7 @@ public class GetWorkflowListTests {
             return accessToken != null;
         }
 
-        public Client logIn() {
+        public AutoRetouchClient logIn() {
             if (this.accessToken == null && refreshToken == null) {
                 return requestDeviceAuth();
             } else if (this.accessToken == null) {
@@ -192,7 +192,7 @@ public class GetWorkflowListTests {
             return workflows.getEntries();
         }
 
-        public Client refreshAccessToken() {
+        public AutoRetouchClient refreshAccessToken() {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
             MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
@@ -216,19 +216,19 @@ public class GetWorkflowListTests {
             return result;
         }
 
-        public Client withDeviceAuth(DeviceAuthorization authorization) {
+        public AutoRetouchClient withDeviceAuth(DeviceAuthorization authorization) {
             this.refreshToken = authorization.getRefreshToken();
             this.clientId = authorization.getClientId();
             this.authType = authorization.getType();
             return refreshAccessToken();
         }
 
-        public Client api(String apiServer) {
+        public AutoRetouchClient api(String apiServer) {
             this.apiServer = apiServer;
             return this;
         }
 
-        public Client authServer(String authServer) {
+        public AutoRetouchClient authServer(String authServer) {
             this.authServer = authServer;
             return this;
         }

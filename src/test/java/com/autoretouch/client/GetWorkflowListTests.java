@@ -5,6 +5,9 @@ import com.autoretouch.client.auth.DeviceAuthorization;
 import com.autoretouch.client.auth.GetDeviceCodeResponse;
 import com.autoretouch.client.model.Page;
 import com.autoretouch.client.model.Workflow;
+import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
@@ -14,6 +17,7 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.awt.*;
+import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -28,20 +32,14 @@ public class GetWorkflowListTests {
     private static final String CLIENT_ID = "DtLZblh4cfQdNc1iNXNV2JXy4zFL6qCM";
     private static final String AUDIENCE = "https://api.dev.autoretouch.com/";
     private static final String API_SERVER = "https://api.dev.autoretouch.com/";
+    private static final String AUTH_SERVER = "https://dev-autoretouch.eu.auth0.com/";
+    private static final ObjectMapper objectMapper = new ObjectMapper();
 
     @Test
     void shouldGetListOfAllWorkflows() {
-        Client underTest = new Client()
-                .id(CLIENT_ID)
-                .audience(AUDIENCE)
-                .api(API_SERVER)
-                .logIn();
+        Client underTest = createDevClient().logIn();
 
-        await().atMost(underTest.deviceCodeExpiresIn, TimeUnit.SECONDS)
-                .pollInterval(underTest.refreshInterval, TimeUnit.SECONDS)
-                .untilAsserted(() -> {
-                    assertThat(underTest.requestAuthToken()).isTrue();
-                });
+        waitForUserToAuthViaBrowser(underTest);
 
         List<Workflow> workflows = underTest.getWorkflows();
         workflows.forEach(workflow -> System.out.println(workflow.getName()));
@@ -49,18 +47,11 @@ public class GetWorkflowListTests {
     }
 
     @Test
-    void shouldLoadCredentialsFromDisk() {
-        Client blankClient = new Client()
-                .id(CLIENT_ID)
-                .audience(AUDIENCE)
-                .api(API_SERVER)
-                .logIn();
+    void shouldLoadCredentialsFromDisk() throws IOException {
+        Client blankClient = createDevClient().logIn();
 
-        await().atMost(blankClient.deviceCodeExpiresIn, TimeUnit.SECONDS)
-                .pollInterval(blankClient.refreshInterval, TimeUnit.SECONDS)
-                .untilAsserted(() -> {
-                    assertThat(blankClient.requestAuthToken()).isTrue();
-                });
+        waitForUserToAuthViaBrowser(blankClient);
+
         DeviceAuthorization authorization = blankClient.getDeviceAuthorization();
 
         assertThat(authorization.getAccessToken()).isNotNull();
@@ -69,12 +60,30 @@ public class GetWorkflowListTests {
         assertThat(authorization.getType()).isEqualTo("Bearer");
         assertThat(authorization.getClientId()).isEqualTo(CLIENT_ID);
 
-        Client clientWithGivenAuthInformation = new Client()
-                .audience(AUDIENCE)
-                .api(API_SERVER)
-                .withDeviceAuth(authorization);
+        File deviceAuthFile = File.createTempFile("autoretouch", ".json");
+        deviceAuthFile.deleteOnExit();
+        ObjectWriter writer = objectMapper.writer(new DefaultPrettyPrinter());
+        writer.writeValue(deviceAuthFile, authorization);
+
+        DeviceAuthorization loadedDeviceAuth = objectMapper.readValue(deviceAuthFile, DeviceAuthorization.class);
+        loadedDeviceAuth.setAccessToken(null);
+
+        Client clientWithGivenAuthInformation = createDevClient()
+                .withDeviceAuth(loadedDeviceAuth);
+
+        clientWithGivenAuthInformation.refreshAccessToken();
 
         assertThat(clientWithGivenAuthInformation.getWorkflows()).isNotEmpty();
+    }
+
+    private void waitForUserToAuthViaBrowser(Client underTest) {
+        await().atMost(underTest.deviceCodeExpiresIn, TimeUnit.SECONDS)
+                .pollInterval(underTest.refreshInterval, TimeUnit.SECONDS)
+                .untilAsserted(() -> assertThat(underTest.requestAuthToken()).isTrue());
+    }
+
+    private Client createDevClient() {
+        return new Client().id(CLIENT_ID).audience(AUDIENCE).api(API_SERVER).authServer(AUTH_SERVER);
     }
 
 
@@ -82,6 +91,7 @@ public class GetWorkflowListTests {
     private class Client {
         private final RestTemplate restTemplate = new RestTemplate();
         private String apiServer = "https://api.autoretouch.com/";
+        private String authServer = "https://auth.autoretouch.com/";
         private String clientId = "V8EkfbxtBi93cAySTVWAecEum4d6pt4J";
         private String audience = "https://api.autoretouch.com/";
         private String authType = "Bearer";
@@ -90,6 +100,7 @@ public class GetWorkflowListTests {
         private String refreshToken = null;
         private String idToken = null;
         private String deviceCode = null;
+        private boolean commandLineOnly = false;
         public int deviceCodeExpiresIn = -1;
         public int refreshInterval = -1;
 
@@ -111,6 +122,11 @@ public class GetWorkflowListTests {
             return this;
         }
 
+        public Client useCommandLineOnly() {
+            commandLineOnly = true;
+            return this;
+        }
+
         public Client requestDeviceAuth() {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
@@ -119,12 +135,12 @@ public class GetWorkflowListTests {
             map.add("client_id", clientId);
             map.add("scope", scope);
             map.add("audience", audience);
-            GetDeviceCodeResponse response = Objects.requireNonNull(restTemplate.exchange("https://dev-autoretouch.eu.auth0.com/oauth/device/code", HttpMethod.POST, request, GetDeviceCodeResponse.class).getBody());
+            GetDeviceCodeResponse response = Objects.requireNonNull(restTemplate.exchange(authServer + "oauth/device/code", HttpMethod.POST, request, GetDeviceCodeResponse.class).getBody());
             String verificationUri = response.getVerificationUriComplete();
             deviceCodeExpiresIn = response.getExpiresIn();
             refreshInterval = response.getInterval();
             deviceCode = response.getDeviceCode();
-            if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
+            if (!commandLineOnly && Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
                 try {
                     Desktop.getDesktop().browse(new URI(verificationUri));
                 } catch (IOException | URISyntaxException ignored) {
@@ -148,7 +164,7 @@ public class GetWorkflowListTests {
                     map.add("device_code", deviceCode);
                     map.add("client_id", clientId);
 
-                    AuthResponse response = Objects.requireNonNull(restTemplate.exchange("https://dev-autoretouch.eu.auth0.com/oauth/token", HttpMethod.POST, request, AuthResponse.class).getBody());
+                    AuthResponse response = Objects.requireNonNull(restTemplate.exchange(authServer + "oauth/token", HttpMethod.POST, request, AuthResponse.class).getBody());
                     this.accessToken = response.getAccessToken();
                     this.refreshToken = response.getRefreshToken();
                     this.idToken = response.getIdToken();
@@ -174,6 +190,22 @@ public class GetWorkflowListTests {
             return workflows.getEntries();
         }
 
+        public Client refreshAccessToken() {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+            MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
+            HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(map, headers);
+            map.add("grant_type", "refresh_token");
+            map.add("client_id", clientId);
+            map.add("refresh_token", refreshToken);
+
+            AuthResponse response = Objects.requireNonNull(restTemplate.exchange(authServer + "oauth/token", HttpMethod.POST, request, AuthResponse.class).getBody());
+            this.accessToken = response.getAccessToken();
+            this.refreshToken = response.getRefreshToken();
+            this.idToken = response.getIdToken();
+            return this;
+        }
+
         public DeviceAuthorization getDeviceAuthorization() {
             DeviceAuthorization result = new DeviceAuthorization();
             result.setAccessToken(accessToken);
@@ -195,6 +227,11 @@ public class GetWorkflowListTests {
 
         public Client api(String apiServer) {
             this.apiServer = apiServer;
+            return this;
+        }
+
+        public Client authServer(String authServer) {
+            this.authServer = authServer;
             return this;
         }
     }

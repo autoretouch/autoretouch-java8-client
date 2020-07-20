@@ -5,18 +5,27 @@ import com.autoretouch.client.auth.DeviceAuthorization;
 import com.autoretouch.client.auth.GetDeviceCodeResponse;
 import com.autoretouch.client.model.Page;
 import com.autoretouch.client.model.Workflow;
+import com.autoretouch.client.model.WorkflowExcution;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.*;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.util.StreamUtils;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.awt.*;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.math.BigInteger;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 class AutoRetouchClient {
@@ -37,8 +46,7 @@ class AutoRetouchClient {
     }
 
     public AutoRetouchClient requestDeviceAuth() {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+        HttpHeaders headers = createUnauthorizedFormHeaders();
         MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
         HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(map, headers);
         map.add("client_id", clientId);
@@ -66,8 +74,7 @@ class AutoRetouchClient {
     public boolean requestAuthToken() {
         if (this.accessToken == null && this.deviceCode != null) {
             try {
-                HttpHeaders headers = new HttpHeaders();
-                headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+                HttpHeaders headers = createUnauthorizedFormHeaders();
                 MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
                 HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(map, headers);
                 map.add("grant_type", "urn:ietf:params:oauth:grant-type:device_code");
@@ -94,8 +101,7 @@ class AutoRetouchClient {
     }
 
     public AutoRetouchClient refreshAccessToken() {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+        HttpHeaders headers = createUnauthorizedFormHeaders();
         MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
         HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(map, headers);
         map.add("grant_type", "refresh_token");
@@ -106,6 +112,12 @@ class AutoRetouchClient {
         accessToken = response.getAccessToken();
         refreshToken = response.getRefreshToken();
         return this;
+    }
+
+    private HttpHeaders createUnauthorizedFormHeaders() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+        return headers;
     }
 
     public DeviceAuthorization getDeviceAuthorization() {
@@ -124,10 +136,8 @@ class AutoRetouchClient {
     }
 
     public List<Workflow> getWorkflows() {
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", "Bearer " + accessToken);
-        HttpEntity<Void> request = new HttpEntity<>(headers);
-        Page<Workflow> workflows = Objects.requireNonNull(restTemplate.exchange(apiServer + "workflow/", HttpMethod.GET,request, new ParameterizedTypeReference<Page<Workflow>>() {}).getBody());
+        HttpEntity<Void> request = new HttpEntity<>(createAuthorizedHeaders());
+        Page<Workflow> workflows = Objects.requireNonNull(restTemplate.exchange(apiServer + "workflow/", HttpMethod.GET, request, new ParameterizedTypeReference<Page<Workflow>>() {}).getBody());
         return workflows.getEntries();
     }
 
@@ -141,5 +151,47 @@ class AutoRetouchClient {
         apiServer = "https://api.dev.autoretouch.com/";
         authServer = "https://dev-autoretouch.eu.auth0.com/";
         return this;
+    }
+
+    public String createWorkflowExecution(String workflowId, FileSystemResource file) {
+        HttpHeaders headers = createAuthorizedHeaders();
+        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+        body.add("file", file);
+        HttpEntity<MultiValueMap<String, Object>> creationRequest = new HttpEntity<>(body, headers);
+        RestTemplate restTemplate = new RestTemplate();
+        return restTemplate.postForEntity(apiServer + "workflow/execution/create?workflow=" + workflowId, creationRequest, String.class).getBody();
+    }
+
+    public WorkflowExcution getWorkflowExecution(String executionId) {
+        HttpEntity<Void> statusRequest = new HttpEntity<>(createAuthorizedHeaders());
+        return restTemplate.exchange(apiServer + "workflow/execution/" + executionId, HttpMethod.GET, statusRequest, WorkflowExcution.class).getBody();
+    }
+
+    public HttpStatus downloadWorkflowExecutionResultImage(WorkflowExcution execution, OutputStream resultStream) {
+        return restTemplate.execute(
+                apiServer + "image/" + execution.getResultContentHash() + "/" + execution.getResultFileName(),
+                HttpMethod.GET,
+                clientHttpRequest -> clientHttpRequest.getHeaders().setBearerAuth(accessToken),
+                clientHttpResponse -> {
+                    StreamUtils.copy(clientHttpResponse.getBody(), resultStream);
+                    return clientHttpResponse.getStatusCode();
+                });
+    }
+
+    public HttpStatus retryWorkflowExecution(String executionId) {
+        HttpEntity<Void> triggerRetryRequest = new HttpEntity<>(createAuthorizedHeaders());
+        return restTemplate.exchange(apiServer + "workflow/execution/retry?execution=" + executionId, HttpMethod.POST, triggerRetryRequest, String.class).getStatusCode();
+    }
+
+    public BigInteger getBalance() {
+        HttpEntity<Void> request = new HttpEntity<>(createAuthorizedHeaders());
+        return restTemplate.exchange(apiServer + "company/balance", HttpMethod.GET, request, BigInteger.class).getBody();
+    }
+
+    private HttpHeaders createAuthorizedHeaders() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "Bearer " + accessToken);
+        return headers;
     }
 }

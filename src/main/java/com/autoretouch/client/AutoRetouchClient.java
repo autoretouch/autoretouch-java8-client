@@ -135,7 +135,7 @@ class AutoRetouchClient {
         return restTemplate.getForEntity(apiServer + "health/", String.class).getStatusCode();
     }
 
-    protected AutoRetouchClient developmentServer() {
+    protected AutoRetouchClient useDevelopmentEnvironment() {
         clientId = "DtLZblh4cfQdNc1iNXNV2JXy4zFL6qCM";
         audience = "https://api.dev.autoretouch.com/";
         apiServer = "https://api.dev.autoretouch.com/";

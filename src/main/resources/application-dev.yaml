@@ -1,0 +1,6 @@
+autoretouch:
+  client:
+    id: "DtLZblh4cfQdNc1iNXNV2JXy4zFL6qCM"
+    audience: "https://api.dev.autoretouch.com/"
+    auth.domain: "dev-autoretouch.eu.auth0.com/"
+    api.server: "https://api.dev.autoretouch.com/"

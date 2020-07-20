@@ -73,6 +73,4 @@ public class GetWorkflowListTests {
     private AutoRetouchClient createDevClient() {
         return new AutoRetouchClient().id(CLIENT_ID).audience(AUDIENCE).api(API_SERVER).authServer(AUTH_SERVER);
     }
-
-
 }

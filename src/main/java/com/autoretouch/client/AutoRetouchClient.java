@@ -41,26 +41,6 @@ class AutoRetouchClient {
     public AutoRetouchClient() {
     }
 
-    public AutoRetouchClient id(String id) {
-        clientId = id;
-        return this;
-    }
-
-    public AutoRetouchClient audience(String audience) {
-        this.audience = audience;
-        return this;
-    }
-
-    public AutoRetouchClient scope(String scope) {
-        this.scope = scope;
-        return this;
-    }
-
-    public AutoRetouchClient useCommandLineOnly() {
-        commandLineOnly = true;
-        return this;
-    }
-
     public AutoRetouchClient requestDeviceAuth() {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
@@ -86,6 +66,7 @@ class AutoRetouchClient {
         }
         return this;
     }
+
 
     public boolean requestAuthToken() {
         if (this.accessToken == null && this.deviceCode != null) {
@@ -157,13 +138,33 @@ class AutoRetouchClient {
         return refreshAccessToken();
     }
 
-    public AutoRetouchClient api(String apiServer) {
+    protected AutoRetouchClient api(String apiServer) {
         this.apiServer = apiServer;
         return this;
     }
 
-    public AutoRetouchClient authServer(String authServer) {
+    protected AutoRetouchClient authServer(String authServer) {
         this.authServer = authServer;
+        return this;
+    }
+
+    protected AutoRetouchClient id(String id) {
+        clientId = id;
+        return this;
+    }
+
+    protected AutoRetouchClient audience(String audience) {
+        this.audience = audience;
+        return this;
+    }
+
+    protected AutoRetouchClient scope(String scope) {
+        this.scope = scope;
+        return this;
+    }
+
+    protected AutoRetouchClient useCommandLineOnly() {
+        commandLineOnly = true;
         return this;
     }
 }

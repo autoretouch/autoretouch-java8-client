@@ -29,7 +29,7 @@ public class GetWorkflowListTests {
         waitForUserToAuthViaBrowser(underTest);
 
         List<Workflow> workflows = underTest.getWorkflows();
-        workflows.forEach(workflow -> System.out.println(workflow.getName()));
+        workflows.forEach(System.out::println);
         assertThat(workflows).isNotEmpty();
     }
 

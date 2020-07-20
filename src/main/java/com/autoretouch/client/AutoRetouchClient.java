@@ -99,14 +99,6 @@ class AutoRetouchClient {
         return this;
     }
 
-    public List<Workflow> getWorkflows() {
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", "Bearer " + accessToken);
-        HttpEntity<Void> request = new HttpEntity<>(headers);
-        Page<Workflow> workflows = Objects.requireNonNull(restTemplate.exchange(apiServer + "workflow/", HttpMethod.GET,request, new ParameterizedTypeReference<Page<Workflow>>() {}).getBody());
-        return workflows.getEntries();
-    }
-
     public AutoRetouchClient refreshAccessToken() {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
@@ -121,6 +113,14 @@ class AutoRetouchClient {
         this.refreshToken = response.getRefreshToken();
         this.idToken = response.getIdToken();
         return this;
+    }
+
+    public List<Workflow> getWorkflows() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "Bearer " + accessToken);
+        HttpEntity<Void> request = new HttpEntity<>(headers);
+        Page<Workflow> workflows = Objects.requireNonNull(restTemplate.exchange(apiServer + "workflow/", HttpMethod.GET,request, new ParameterizedTypeReference<Page<Workflow>>() {}).getBody());
+        return workflows.getEntries();
     }
 
     public DeviceAuthorization getDeviceAuthorization() {

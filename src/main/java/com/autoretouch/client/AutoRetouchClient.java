@@ -31,7 +31,7 @@ import java.util.Objects;
 class AutoRetouchClient {
     private final RestTemplate restTemplate = new RestTemplate();
 
-    private String apiServer = "https://api.autoretouch.com/";
+    private String apiServer = "https://api.autoretouch.com";
     private String authServer = "https://auth.autoretouch.com/";
     private String clientId = "V8EkfbxtBi93cAySTVWAecEum4d6pt4J";
     private String audience = "https://api.autoretouch.com";
@@ -137,18 +137,18 @@ class AutoRetouchClient {
 
     public List<Workflow> getWorkflows() {
         HttpEntity<Void> request = new HttpEntity<>(createAuthorizedHeaders());
-        Page<Workflow> workflows = Objects.requireNonNull(restTemplate.exchange(apiServer + "workflow/", HttpMethod.GET, request, new ParameterizedTypeReference<Page<Workflow>>() {}).getBody());
+        Page<Workflow> workflows = Objects.requireNonNull(restTemplate.exchange(apiServer + "/workflow/", HttpMethod.GET, request, new ParameterizedTypeReference<Page<Workflow>>() {}).getBody());
         return workflows.getEntries();
     }
 
     public HttpStatus getApiStatus() {
-        return restTemplate.getForEntity(apiServer + "health/", String.class).getStatusCode();
+        return restTemplate.getForEntity(apiServer + "/health/", String.class).getStatusCode();
     }
 
     protected AutoRetouchClient useDevelopmentEnvironment() {
         clientId = "DtLZblh4cfQdNc1iNXNV2JXy4zFL6qCM";
         audience = "https://api.dev.autoretouch.com/";
-        apiServer = "https://api.dev.autoretouch.com/";
+        apiServer = "https://api.dev.autoretouch.com";
         authServer = "https://dev-autoretouch.eu.auth0.com/";
         return this;
     }
@@ -160,17 +160,17 @@ class AutoRetouchClient {
         body.add("file", file);
         HttpEntity<MultiValueMap<String, Object>> creationRequest = new HttpEntity<>(body, headers);
         RestTemplate restTemplate = new RestTemplate();
-        return restTemplate.postForEntity(apiServer + "workflow/execution/create?workflow=" + workflowId, creationRequest, String.class).getBody();
+        return restTemplate.postForEntity(apiServer + "/workflow/execution/create?workflow=" + workflowId, creationRequest, String.class).getBody();
     }
 
     public WorkflowExcution getWorkflowExecution(String executionId) {
         HttpEntity<Void> statusRequest = new HttpEntity<>(createAuthorizedHeaders());
-        return restTemplate.exchange(apiServer + "workflow/execution/" + executionId, HttpMethod.GET, statusRequest, WorkflowExcution.class).getBody();
+        return restTemplate.exchange(apiServer + "/workflow/execution/" + executionId, HttpMethod.GET, statusRequest, WorkflowExcution.class).getBody();
     }
 
     public HttpStatus downloadWorkflowExecutionResultImage(WorkflowExcution execution, OutputStream resultStream) {
         return restTemplate.execute(
-                apiServer + "image/" + execution.getResultContentHash() + "/" + execution.getResultFileName(),
+                apiServer + execution.getResultPath(),
                 HttpMethod.GET,
                 clientHttpRequest -> clientHttpRequest.getHeaders().setBearerAuth(accessToken),
                 clientHttpResponse -> {
@@ -181,12 +181,12 @@ class AutoRetouchClient {
 
     public HttpStatus retryWorkflowExecution(String executionId) {
         HttpEntity<Void> triggerRetryRequest = new HttpEntity<>(createAuthorizedHeaders());
-        return restTemplate.exchange(apiServer + "workflow/execution/retry?execution=" + executionId, HttpMethod.POST, triggerRetryRequest, String.class).getStatusCode();
+        return restTemplate.exchange(apiServer + "/workflow/execution/retry?execution=" + executionId, HttpMethod.POST, triggerRetryRequest, String.class).getStatusCode();
     }
 
     public BigInteger getBalance() {
         HttpEntity<Void> request = new HttpEntity<>(createAuthorizedHeaders());
-        return restTemplate.exchange(apiServer + "company/balance", HttpMethod.GET, request, BigInteger.class).getBody();
+        return restTemplate.exchange(apiServer + "/company/balance", HttpMethod.GET, request, BigInteger.class).getBody();
     }
 
     private HttpHeaders createAuthorizedHeaders() {
@@ -197,7 +197,7 @@ class AutoRetouchClient {
 
     public List<WorkflowExcution> getLatestWorkflowExecutions(String workflowId) {
         HttpEntity<Void> request = new HttpEntity<>(createAuthorizedHeaders());
-        return restTemplate.exchange(apiServer + "workflow/execution?workflow=" + workflowId, HttpMethod.GET, request, new ParameterizedTypeReference<Page<WorkflowExcution>>(){})
+        return restTemplate.exchange(apiServer + "/workflow/execution?workflow=" + workflowId, HttpMethod.GET, request, new ParameterizedTypeReference<Page<WorkflowExcution>>(){})
                 .getBody()
                 .getEntries();
     }

@@ -47,6 +47,26 @@ public class WorkflowExecution {
     @JsonProperty("chargedCredits")
     private int chargedCredits;
 
+    @Override
+    public String toString() {
+        return "WorkflowExecution{" +
+                "id='" + id + '\'' +
+                ", workflowId='" + workflowId + '\'' +
+                ", workflowVersionId='" + workflowVersionId + '\'' +
+                ", companyId='" + companyId + '\'' +
+                ", status='" + status + '\'' +
+                ", createdAt='" + createdAt + '\'' +
+                ", startedAt='" + startedAt + '\'' +
+                ", finishedAt='" + finishedAt + '\'' +
+                ", inputFileName='" + inputFileName + '\'' +
+                ", resultContentHash='" + resultContentHash + '\'' +
+                ", resultFileName='" + resultFileName + '\'' +
+                ", resultPath='" + resultPath + '\'' +
+                ", labels=" + labels +
+                ", chargedCredits=" + chargedCredits +
+                '}';
+    }
+
     public String getId() {
         return id;
     }

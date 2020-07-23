@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.Map;
 
-public class WorkflowExcution {
+public class WorkflowExecution {
     @JsonProperty("id")
     private String id;
 
@@ -44,24 +44,8 @@ public class WorkflowExcution {
     @JsonProperty("labels")
     private Map<String, String> labels;
 
-    @Override
-    public String toString() {
-        return "WorkflowExcution{" +
-                "id='" + id + '\'' +
-                ", workflowId='" + workflowId + '\'' +
-                ", workflowVersionId='" + workflowVersionId + '\'' +
-                ", companyId='" + companyId + '\'' +
-                ", status='" + status + '\'' +
-                ", createdAt='" + createdAt + '\'' +
-                ", startedAt='" + startedAt + '\'' +
-                ", finishedAt='" + finishedAt + '\'' +
-                ", inputFileName='" + inputFileName + '\'' +
-                ", resultContentHash='" + resultContentHash + '\'' +
-                ", resultFileName='" + resultFileName + '\'' +
-                ", resultPath='" + resultPath + '\'' +
-                ", labels=" + labels +
-                '}';
-    }
+    @JsonProperty("chargedCredits")
+    private int chargedCredits;
 
     public String getId() {
         return id;
@@ -165,5 +149,13 @@ public class WorkflowExcution {
 
     public void setLabels(Map<String, String> labels) {
         this.labels = labels;
+    }
+
+    public int getChargedCredits() {
+        return chargedCredits;
+    }
+
+    public void setChargedCredits(int chargedCredits) {
+        this.chargedCredits = chargedCredits;
     }
 }

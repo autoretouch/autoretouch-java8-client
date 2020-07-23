@@ -2,7 +2,7 @@ package com.autoretouch.client;
 
 import com.autoretouch.client.model.Workflow;
 
-import com.autoretouch.client.model.WorkflowExcution;
+import com.autoretouch.client.model.WorkflowExecution;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.io.FileSystemResource;
@@ -40,23 +40,23 @@ public class WorkflowExecutionIT {
         String executionId = startExecutionWithGivenSampleImage();
         waitUntilWorkflowExecutionIsSuccessful(executionId);
         assertThatCurrentBalanceIsReducedByTheCostOfOneWorkflowExecution(initialBalance);
-        WorkflowExcution finishedExecution = getFinishedWorkflowExcutionResult(executionId);
+        WorkflowExecution finishedExecution = getFinishedWorkflowExcutionResult(executionId);
         downloadResultToTemporaryFile(finishedExecution);
     }
 
     @Test
     void shouldReturnListOfAllExecutionsOfWorkflowContainingTheNewlyTriggeredExecution() {
         String executionId = startExecutionWithGivenSampleImage();
-        List<WorkflowExcution> executions = underTest.getLatestWorkflowExecutions(givenWorkflow.getId());
+        List<WorkflowExecution> executions = underTest.getLatestWorkflowExecutions(givenWorkflow.getId());
         assertThatExecutionListContainsExecutionOnce(executionId, executions);
     }
 
-    private void assertThatExecutionListContainsExecutionOnce(String executionId, List<WorkflowExcution> executions) {
+    private void assertThatExecutionListContainsExecutionOnce(String executionId, List<WorkflowExecution> executions) {
         assertThat(executions).isNotEmpty();
-        assertThat(executions.stream().map(WorkflowExcution::getId).collect(Collectors.toList())).containsOnlyOnce(executionId);
+        assertThat(executions.stream().map(WorkflowExecution::getId).collect(Collectors.toList())).containsOnlyOnce(executionId);
     }
 
-    private void downloadResultToTemporaryFile(WorkflowExcution finishedExecution) throws IOException {
+    private void downloadResultToTemporaryFile(WorkflowExecution finishedExecution) throws IOException {
         File resultingFile = File.createTempFile("result", ".png");
         resultingFile.deleteOnExit();
 
@@ -66,8 +66,8 @@ public class WorkflowExecutionIT {
         assertThat(resultingFile.length()).isGreaterThan(0L);
     }
 
-    private WorkflowExcution getFinishedWorkflowExcutionResult(String executionId) {
-        WorkflowExcution finishedExecution = underTest.getWorkflowExecution(executionId);
+    private WorkflowExecution getFinishedWorkflowExcutionResult(String executionId) {
+        WorkflowExecution finishedExecution = underTest.getWorkflowExecution(executionId);
         assertThat(finishedExecution.getResultContentHash()).isNotNull();
         assertThat(finishedExecution.getResultFileName()).contains("sample_image");
         assertThat(finishedExecution.getLabels().get("tenant")).isEqualTo("1234");

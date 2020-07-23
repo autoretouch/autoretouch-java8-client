@@ -5,7 +5,7 @@ import com.autoretouch.client.auth.DeviceAuthorization;
 import com.autoretouch.client.auth.GetDeviceCodeResponse;
 import com.autoretouch.client.model.Page;
 import com.autoretouch.client.model.Workflow;
-import com.autoretouch.client.model.WorkflowExcution;
+import com.autoretouch.client.model.WorkflowExecution;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.*;
@@ -16,8 +16,6 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.awt.*;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.math.BigInteger;
@@ -176,12 +174,12 @@ class AutoRetouchClient {
         return createWorkflowExecution(workflowId, file, new HashMap<>());
     }
 
-    public WorkflowExcution getWorkflowExecution(String executionId) {
+    public WorkflowExecution getWorkflowExecution(String executionId) {
         HttpEntity<Void> statusRequest = new HttpEntity<>(createAuthorizedHeaders());
-        return restTemplate.exchange(apiServer + "/workflow/execution/" + executionId, HttpMethod.GET, statusRequest, WorkflowExcution.class).getBody();
+        return restTemplate.exchange(apiServer + "/workflow/execution/" + executionId, HttpMethod.GET, statusRequest, WorkflowExecution.class).getBody();
     }
 
-    public HttpStatus downloadWorkflowExecutionResultImage(WorkflowExcution execution, OutputStream resultStream) {
+    public HttpStatus downloadWorkflowExecutionResultImage(WorkflowExecution execution, OutputStream resultStream) {
         return restTemplate.execute(
                 apiServer + execution.getResultPath(),
                 HttpMethod.GET,
@@ -208,9 +206,9 @@ class AutoRetouchClient {
         return headers;
     }
 
-    public List<WorkflowExcution> getLatestWorkflowExecutions(String workflowId) {
+    public List<WorkflowExecution> getLatestWorkflowExecutions(String workflowId) {
         HttpEntity<Void> request = new HttpEntity<>(createAuthorizedHeaders());
-        return restTemplate.exchange(apiServer + "/workflow/execution?workflow=" + workflowId, HttpMethod.GET, request, new ParameterizedTypeReference<Page<WorkflowExcution>>(){})
+        return restTemplate.exchange(apiServer + "/workflow/execution?workflow=" + workflowId, HttpMethod.GET, request, new ParameterizedTypeReference<Page<WorkflowExecution>>(){})
                 .getBody()
                 .getEntries();
     }

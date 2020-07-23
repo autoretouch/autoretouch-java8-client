@@ -2,6 +2,8 @@ package com.autoretouch.client.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.Map;
+
 public class WorkflowExcution {
     @JsonProperty("id")
     private String id;
@@ -18,9 +20,6 @@ public class WorkflowExcution {
     @JsonProperty("status")
     private String status;
 
-    @JsonProperty("userId")
-    private String userId;
-
     @JsonProperty("createdAt")
     private String createdAt;
 
@@ -33,14 +32,17 @@ public class WorkflowExcution {
     @JsonProperty("inputFileName")
     private String inputFileName;
 
-    @JsonProperty("inputContentHash")
-    private String inputContentHash;
-
     @JsonProperty("resultContentHash")
     private String resultContentHash;
 
     @JsonProperty("resultFileName")
     private String resultFileName;
+
+    @JsonProperty("resultPath")
+    private String resultPath;
+
+    @JsonProperty("labels")
+    private Map<String, String> labels;
 
     @Override
     public String toString() {
@@ -50,14 +52,14 @@ public class WorkflowExcution {
                 ", workflowVersionId='" + workflowVersionId + '\'' +
                 ", companyId='" + companyId + '\'' +
                 ", status='" + status + '\'' +
-                ", userId='" + userId + '\'' +
                 ", createdAt='" + createdAt + '\'' +
                 ", startedAt='" + startedAt + '\'' +
                 ", finishedAt='" + finishedAt + '\'' +
                 ", inputFileName='" + inputFileName + '\'' +
-                ", inputContentHash='" + inputContentHash + '\'' +
                 ", resultContentHash='" + resultContentHash + '\'' +
                 ", resultFileName='" + resultFileName + '\'' +
+                ", resultPath='" + resultPath + '\'' +
+                ", labels=" + labels +
                 '}';
     }
 
@@ -101,14 +103,6 @@ public class WorkflowExcution {
         this.status = status;
     }
 
-    public String getUserId() {
-        return userId;
-    }
-
-    public void setUserId(String userId) {
-        this.userId = userId;
-    }
-
     public String getCreatedAt() {
         return createdAt;
     }
@@ -141,14 +135,6 @@ public class WorkflowExcution {
         this.inputFileName = inputFileName;
     }
 
-    public String getInputContentHash() {
-        return inputContentHash;
-    }
-
-    public void setInputContentHash(String inputContentHash) {
-        this.inputContentHash = inputContentHash;
-    }
-
     public String getResultContentHash() {
         return resultContentHash;
     }
@@ -163,5 +149,21 @@ public class WorkflowExcution {
 
     public void setResultFileName(String resultFileName) {
         this.resultFileName = resultFileName;
+    }
+
+    public String getResultPath() {
+        return resultPath;
+    }
+
+    public void setResultPath(String resultPath) {
+        this.resultPath = resultPath;
+    }
+
+    public Map<String, String> getLabels() {
+        return labels;
+    }
+
+    public void setLabels(Map<String, String> labels) {
+        this.labels = labels;
     }
 }

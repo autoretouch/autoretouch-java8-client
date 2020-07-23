@@ -12,7 +12,9 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -68,6 +70,7 @@ public class WorkflowExecutionIT {
         WorkflowExcution finishedExecution = underTest.getWorkflowExecution(executionId);
         assertThat(finishedExecution.getResultContentHash()).isNotNull();
         assertThat(finishedExecution.getResultFileName()).contains("sample_image");
+        assertThat(finishedExecution.getLabels().get("tenant")).isEqualTo("1234");
         return finishedExecution;
     }
 
@@ -77,7 +80,9 @@ public class WorkflowExecutionIT {
     }
 
     private String startExecutionWithGivenSampleImage() {
-        String executionId = underTest.createWorkflowExecution(givenWorkflow.getId(), givenSampleImage);
+        Map<String, String> labels = new HashMap<>();
+        labels.put("tenant", "1234");
+        String executionId = underTest.createWorkflowExecution(givenWorkflow.getId(), givenSampleImage, labels);
         assertThat(executionId).isNotNull();
         return executionId;
     }

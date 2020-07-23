@@ -153,14 +153,27 @@ class AutoRetouchClient {
         return this;
     }
 
-    public String createWorkflowExecution(String workflowId, FileSystemResource file) {
+    public String createWorkflowExecution(String workflowId, FileSystemResource file, Map<String, String> labels) {
         HttpHeaders headers = createAuthorizedHeaders();
         headers.setContentType(MediaType.MULTIPART_FORM_DATA);
         MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
         body.add("file", file);
         HttpEntity<MultiValueMap<String, Object>> creationRequest = new HttpEntity<>(body, headers);
         RestTemplate restTemplate = new RestTemplate();
-        return restTemplate.postForEntity(apiServer + "/workflow/execution/create?workflow=" + workflowId, creationRequest, String.class).getBody();
+        String labelParams = createLabelParams(labels);
+        return restTemplate.postForEntity(apiServer + "/workflow/execution/create?workflow=" + workflowId + "&" + labelParams, creationRequest, String.class).getBody();
+    }
+
+    private String createLabelParams(Map<String, String> labels) {
+        StringBuilder paramsBuilder = new StringBuilder();
+        labels.entrySet().stream()
+            .map(label -> "&labels[" + label.getKey() + "]=" + label.getValue())
+            .forEach(paramsBuilder::append);
+        return paramsBuilder.toString();
+    }
+
+    public String createWorkflowExecution(String workflowId, FileSystemResource file) {
+        return createWorkflowExecution(workflowId, file, new HashMap<>());
     }
 
     public WorkflowExcution getWorkflowExecution(String executionId) {

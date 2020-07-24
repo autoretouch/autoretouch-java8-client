@@ -178,6 +178,11 @@ class AutoRetouchClient {
         return restTemplate.exchange(apiServer + "/workflow/execution/" + executionId, HttpMethod.GET, statusRequest, WorkflowExecution.class).getBody();
     }
 
+    public String getWorkflowExecutionStatus(String executionId) {
+        HttpEntity<Void> statusRequest = new HttpEntity<>(createAuthorizedHeaders());
+        return restTemplate.exchange(apiServer + "/workflow/execution/" + executionId + "/status", HttpMethod.GET, statusRequest, String.class).getBody();
+    }
+
     public HttpStatus downloadWorkflowExecutionResultImage(WorkflowExecution execution, OutputStream resultStream) {
         return restTemplate.execute(
                 apiServer + execution.getResultPath(),

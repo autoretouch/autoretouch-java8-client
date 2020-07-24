@@ -94,6 +94,8 @@ public class WorkflowExecutionIT {
     }
 
     private void waitUntilWorkflowExecutionIsSuccessful(String executionId) {
+        String status = underTest.getWorkflowExecutionStatus(executionId);
+        System.out.println(status);
         await().atMost(60, TimeUnit.SECONDS)
                 .pollInterval(1, TimeUnit.SECONDS)
                 .untilAsserted(() -> assertThat(underTest.getWorkflowExecution(executionId).getStatus()).isEqualTo("COMPLETED"));

@@ -157,7 +157,6 @@ class AutoRetouchClient {
         MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
         body.add("file", file);
         HttpEntity<MultiValueMap<String, Object>> creationRequest = new HttpEntity<>(body, headers);
-        RestTemplate restTemplate = new RestTemplate();
         String labelParams = createLabelParams(labels);
         return restTemplate.postForEntity(apiServer + "/workflow/execution/create?workflow=" + workflowId + "&" + labelParams, creationRequest, String.class).getBody();
     }

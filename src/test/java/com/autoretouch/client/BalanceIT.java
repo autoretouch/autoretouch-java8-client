@@ -11,7 +11,7 @@ public class BalanceIT {
 
     @Test
     void shouldReturnAccountBalance() throws IOException {
-        AutoRetouchClient underTest = DeviceAuthIT.createOrGetDevelopmentClient();
+        AutoRetouchClient underTest = DeviceAuthIT.createOrGetClient();
 
         BigInteger balance = underTest.getBalance();
 

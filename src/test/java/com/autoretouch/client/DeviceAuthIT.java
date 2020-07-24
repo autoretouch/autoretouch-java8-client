@@ -56,14 +56,18 @@ public class DeviceAuthIT {
 
     private static AutoRetouchClient instance = null;
 
-    public static AutoRetouchClient createOrGetDevelopmentClient() throws IOException {
+    public static AutoRetouchClient createOrGetClient() throws IOException {
         if (instance == null) {
+            instance = new AutoRetouchClient();
+            if ("development".equalsIgnoreCase(System.getenv("env"))) {
+                instance.useDevelopmentEnvironment();
+            }
             File credentialFile = new File("autoretouch-credentials.json");
             if (credentialFile.exists()) {
                 DeviceAuthorization loadedDeviceAuth = objectMapper.readValue(credentialFile, DeviceAuthorization.class);
-                instance = new AutoRetouchClient().useDevelopmentEnvironment().withDeviceAuth(loadedDeviceAuth);
+                instance.withDeviceAuth(loadedDeviceAuth);
             } else {
-                instance = new AutoRetouchClient().useDevelopmentEnvironment().logIn();
+                instance.logIn();
                 waitForUserToAuthViaBrowser(instance);
                 DeviceAuthorization authorization = instance.getDeviceAuthorization();
                 ObjectWriter writer = objectMapper.writer(new DefaultPrettyPrinter());

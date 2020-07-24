@@ -12,7 +12,7 @@ public class GetWorkflowListTests {
 
     @Test
     void shouldGetListOfAllWorkflows() throws IOException {
-        AutoRetouchClient underTest = DeviceAuthIT.createOrGetDevelopmentClient();
+        AutoRetouchClient underTest = DeviceAuthIT.createOrGetClient();
 
         List<Workflow> workflows = underTest.getWorkflows();
         workflows.forEach(System.out::println);

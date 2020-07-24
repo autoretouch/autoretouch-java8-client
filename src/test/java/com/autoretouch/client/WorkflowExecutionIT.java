@@ -29,7 +29,7 @@ public class WorkflowExecutionIT {
 
     @BeforeEach
     void setUp() throws IOException {
-        underTest = DeviceAuthIT.createOrGetDevelopmentClient();
+        underTest = DeviceAuthIT.createOrGetClient();
         givenWorkflow = underTest.getWorkflows().get(0);
         givenSampleImage = new FileSystemResource(getClass().getClassLoader().getResource("sample_image.jpg").getFile());
     }
@@ -39,8 +39,8 @@ public class WorkflowExecutionIT {
         BigInteger initialBalance = requestInitialBalance();
         String executionId = startExecutionWithGivenSampleImage();
         waitUntilWorkflowExecutionIsSuccessful(executionId);
-        assertThatCurrentBalanceIsReducedByTheCostOfOneWorkflowExecution(initialBalance);
         WorkflowExecution finishedExecution = getFinishedWorkflowExcutionResult(executionId);
+        assertThatCurrentBalanceIsReducedByTheCostOfOneWorkflowExecution(initialBalance, finishedExecution);
         downloadResultToTemporaryFile(finishedExecution);
     }
 
@@ -74,9 +74,9 @@ public class WorkflowExecutionIT {
         return finishedExecution;
     }
 
-    private void assertThatCurrentBalanceIsReducedByTheCostOfOneWorkflowExecution(BigInteger initialBalance) {
+    private void assertThatCurrentBalanceIsReducedByTheCostOfOneWorkflowExecution(BigInteger initialBalance, WorkflowExecution finishedExecution) {
         BigInteger currentBalance = underTest.getBalance();
-        assertThat(currentBalance).isEqualTo(initialBalance.subtract(BigInteger.TEN));
+        assertThat(currentBalance).isEqualTo(initialBalance.subtract(BigInteger.valueOf(finishedExecution.getChargedCredits())));
     }
 
     private String startExecutionWithGivenSampleImage() {

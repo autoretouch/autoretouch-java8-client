@@ -133,6 +133,11 @@ public class AutoRetouchClient {
         return refreshAccessToken();
     }
 
+    public AutoRetouchClient withRefreshToken(String refreshToken) {
+        this.refreshToken = refreshToken;
+        return this;
+    }
+
     public List<Workflow> getWorkflows() {
         HttpEntity<Void> request = new HttpEntity<>(createAuthorizedHeaders());
         Page<Workflow> workflows = Objects.requireNonNull(restTemplate.exchange(apiServer + "/workflow/", HttpMethod.GET, request, new ParameterizedTypeReference<Page<Workflow>>() {}).getBody());

@@ -9,9 +9,9 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.autoretouch</groupId>
-	<artifactId>client</artifactId>
+	<artifactId>autoretouch-client</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>client</name>
+	<name>autoretouch-client</name>
 	<description>autoRetouch java 8 API client</description>
 
 	<properties>

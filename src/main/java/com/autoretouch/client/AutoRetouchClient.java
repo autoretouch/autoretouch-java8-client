@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-class AutoRetouchClient {
+public class AutoRetouchClient {
     private final RestTemplate restTemplate = new RestTemplate();
 
     private String apiServer = "https://api.autoretouch.com";

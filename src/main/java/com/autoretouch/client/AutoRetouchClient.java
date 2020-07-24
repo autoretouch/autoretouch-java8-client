@@ -196,7 +196,7 @@ class AutoRetouchClient {
 
     public HttpStatus retryWorkflowExecution(String executionId) {
         HttpEntity<Void> triggerRetryRequest = new HttpEntity<>(createAuthorizedHeaders());
-        return restTemplate.exchange(apiServer + "/workflow/execution/retry?execution=" + executionId, HttpMethod.POST, triggerRetryRequest, String.class).getStatusCode();
+        return restTemplate.exchange(apiServer + "/workflow/execution/" + executionId + "/retry", HttpMethod.POST, triggerRetryRequest, String.class).getStatusCode();
     }
 
     public BigInteger getBalance() {

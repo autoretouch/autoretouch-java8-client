@@ -7,6 +7,7 @@ public class Workflow {
     @JsonProperty("version") private String version;
     @JsonProperty("name") private String name;
     @JsonProperty("date") private String creationDate;
+    @JsonProperty("executionPrice") private int executionPrice;
 
     public String getId() {
         return id;
@@ -39,6 +40,14 @@ public class Workflow {
         this.creationDate = creationDate;
     }
 
+    public int getExecutionPrice() {
+        return executionPrice;
+    }
+
+    public void setExecutionPrice(int executionPrice) {
+        this.executionPrice = executionPrice;
+    }
+
     @Override
     public String toString() {
         return "Workflow{" +
@@ -46,6 +55,7 @@ public class Workflow {
                 ", version='" + version + '\'' +
                 ", name='" + name + '\'' +
                 ", creationDate='" + creationDate + '\'' +
+                ", executionPrice='" + executionPrice + '\'' +
                 '}';
     }
 }

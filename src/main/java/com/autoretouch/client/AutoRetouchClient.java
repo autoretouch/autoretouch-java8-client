@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 public class AutoRetouchClient {
     private final RestTemplate restTemplate = new RestTemplate();
@@ -37,10 +38,21 @@ public class AutoRetouchClient {
     private String accessToken = null;
     private String refreshToken = null;
     private String deviceCode = null;
+    private String pinnedVersion = "";
     public int deviceCodeExpiresIn = -1;
     public int refreshInterval = -1;
 
     public AutoRetouchClient() {
+    }
+
+    public AutoRetouchClient pinToVersion(int version) {
+        pinnedVersion = "/v" + version + "";
+        return this;
+    }
+
+    public AutoRetouchClient useLatestVersion() {
+        pinnedVersion = "";
+        return this;
     }
 
     public AutoRetouchClient requestDeviceAuth() {
@@ -108,7 +120,7 @@ public class AutoRetouchClient {
 
         AuthResponse response = Objects.requireNonNull(restTemplate.exchange(authServer + "oauth/token", HttpMethod.POST, request, AuthResponse.class).getBody());
         accessToken = response.getAccessToken();
-        refreshToken = response.getRefreshToken();
+        Optional.ofNullable(response.getRefreshToken()).ifPresent(s -> refreshToken = s);
         return this;
     }
 
@@ -140,12 +152,12 @@ public class AutoRetouchClient {
 
     public List<Workflow> getWorkflows() {
         HttpEntity<Void> request = new HttpEntity<>(createAuthorizedHeaders());
-        Page<Workflow> workflows = Objects.requireNonNull(restTemplate.exchange(apiServer + "/workflow/", HttpMethod.GET, request, new ParameterizedTypeReference<Page<Workflow>>() {}).getBody());
+        Page<Workflow> workflows = Objects.requireNonNull(restTemplate.exchange(apiRoot() + "/workflow/", HttpMethod.GET, request, new ParameterizedTypeReference<Page<Workflow>>() {}).getBody());
         return workflows.getEntries();
     }
 
     public HttpStatus getApiStatus() {
-        return restTemplate.getForEntity(apiServer + "/health/", String.class).getStatusCode();
+        return restTemplate.getForEntity(apiRoot() + "/health/", String.class).getStatusCode();
     }
 
     protected AutoRetouchClient useDevelopmentEnvironment() {
@@ -163,7 +175,7 @@ public class AutoRetouchClient {
         body.add("file", file);
         HttpEntity<MultiValueMap<String, Object>> creationRequest = new HttpEntity<>(body, headers);
         String labelParams = createLabelParams(labels);
-        return restTemplate.postForEntity(apiServer + "/workflow/execution/create?workflow=" + workflowId + "&" + labelParams, creationRequest, String.class).getBody();
+        return restTemplate.postForEntity(apiRoot() + "/workflow/execution/create?workflow=" + workflowId + "&" + labelParams, creationRequest, String.class).getBody();
     }
 
     private String createLabelParams(Map<String, String> labels) {
@@ -180,12 +192,12 @@ public class AutoRetouchClient {
 
     public WorkflowExecution getWorkflowExecution(String executionId) {
         HttpEntity<Void> statusRequest = new HttpEntity<>(createAuthorizedHeaders());
-        return restTemplate.exchange(apiServer + "/workflow/execution/" + executionId, HttpMethod.GET, statusRequest, WorkflowExecution.class).getBody();
+        return restTemplate.exchange(apiRoot() + "/workflow/execution/" + executionId, HttpMethod.GET, statusRequest, WorkflowExecution.class).getBody();
     }
 
     public String getWorkflowExecutionStatus(String executionId) {
         HttpEntity<Void> statusRequest = new HttpEntity<>(createAuthorizedHeaders());
-        return restTemplate.exchange(apiServer + "/workflow/execution/" + executionId + "/status", HttpMethod.GET, statusRequest, String.class).getBody();
+        return restTemplate.exchange(apiRoot() + "/workflow/execution/" + executionId + "/status", HttpMethod.GET, statusRequest, String.class).getBody();
     }
 
     public HttpStatus downloadWorkflowExecutionResultImage(WorkflowExecution execution, OutputStream resultStream) {
@@ -201,12 +213,24 @@ public class AutoRetouchClient {
 
     public HttpStatus retryWorkflowExecution(String executionId) {
         HttpEntity<Void> triggerRetryRequest = new HttpEntity<>(createAuthorizedHeaders());
-        return restTemplate.exchange(apiServer + "/workflow/execution/" + executionId + "/retry", HttpMethod.POST, triggerRetryRequest, String.class).getStatusCode();
+        return restTemplate.exchange(apiRoot() + "/workflow/execution/" + executionId + "/retry", HttpMethod.POST, triggerRetryRequest, String.class).getStatusCode();
     }
 
     public BigInteger getBalance() {
         HttpEntity<Void> request = new HttpEntity<>(createAuthorizedHeaders());
-        return restTemplate.exchange(apiServer + "/company/balance", HttpMethod.GET, request, BigInteger.class).getBody();
+        return restTemplate.exchange(apiRoot() + "/company/balance", HttpMethod.GET, request, BigInteger.class).getBody();
+    }
+
+    public List<WorkflowExecution> getLatestWorkflowExecutions(String workflowId) {
+        HttpEntity<Void> request = new HttpEntity<>(createAuthorizedHeaders());
+        return restTemplate.exchange(apiRoot() + "/workflow/execution?workflow=" + workflowId, HttpMethod.GET, request, new ParameterizedTypeReference<Page<WorkflowExecution>>(){})
+                .getBody()
+                .getEntries();
+    }
+
+    public Workflow getWorkflow(String workflowId) {
+        HttpEntity<Void> request = new HttpEntity<>(createAuthorizedHeaders());
+        return restTemplate.exchange(apiRoot() + "/workflow/" + workflowId + "/", HttpMethod.GET, request, Workflow.class).getBody();
     }
 
     private HttpHeaders createAuthorizedHeaders() {
@@ -215,10 +239,7 @@ public class AutoRetouchClient {
         return headers;
     }
 
-    public List<WorkflowExecution> getLatestWorkflowExecutions(String workflowId) {
-        HttpEntity<Void> request = new HttpEntity<>(createAuthorizedHeaders());
-        return restTemplate.exchange(apiServer + "/workflow/execution?workflow=" + workflowId, HttpMethod.GET, request, new ParameterizedTypeReference<Page<WorkflowExecution>>(){})
-                .getBody()
-                .getEntries();
+    private String apiRoot() {
+        return this.apiServer + pinnedVersion;
     }
 }

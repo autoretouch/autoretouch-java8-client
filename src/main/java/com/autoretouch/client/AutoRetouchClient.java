@@ -157,7 +157,7 @@ public class AutoRetouchClient {
     }
 
     public HttpStatus getApiStatus() {
-        return restTemplate.getForEntity(apiRoot() + "/health/", String.class).getStatusCode();
+        return restTemplate.getForEntity(apiServer + "/health/", String.class).getStatusCode();
     }
 
     protected AutoRetouchClient useDevelopmentEnvironment() {
@@ -241,5 +241,32 @@ public class AutoRetouchClient {
 
     private String apiRoot() {
         return this.apiServer + pinnedVersion;
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static class Builder {
+        private Integer pinnedVersion = null;
+        public Builder pinToVersion(int version) {
+            pinnedVersion = version;
+            return this;
+        }
+
+        public Builder useLatestVersion() {
+            pinnedVersion = null;
+            return this;
+        }
+
+        public AutoRetouchClient build() {
+            AutoRetouchClient client = new AutoRetouchClient();
+            if (this.pinnedVersion != null) {
+                client.pinToVersion(this.pinnedVersion);
+            } else {
+                client.useLatestVersion();
+            }
+            return client;
+        }
     }
 }

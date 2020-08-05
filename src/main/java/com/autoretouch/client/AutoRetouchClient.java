@@ -150,6 +150,16 @@ public class AutoRetouchClient {
         return this;
     }
 
+    public AutoRetouchClient withApiServer(String apiServer) {
+        this.apiServer = apiServer;
+        return this;
+    }
+
+    public AutoRetouchClient withAuthServer(String authServer) {
+        this.authServer = authServer;
+        return this;
+    }
+
     public List<Workflow> getWorkflows() {
         HttpEntity<Void> request = new HttpEntity<>(createAuthorizedHeaders());
         Page<Workflow> workflows = Objects.requireNonNull(restTemplate.exchange(apiRoot() + "/workflow/", HttpMethod.GET, request, new ParameterizedTypeReference<Page<Workflow>>() {}).getBody());

@@ -168,6 +168,11 @@ public class AutoRetouchClient {
         return this;
     }
 
+    private AutoRetouchClient withAccessToken(String accessToken) {
+        this.accessToken = accessToken;
+        return this;
+    }
+
     public List<Workflow> getWorkflows() {
         HttpEntity<Void> request = new HttpEntity<>(createAuthorizedHeaders());
         Page<Workflow> workflows = Objects.requireNonNull(restTemplate.exchange(apiRoot() + "/workflow/", HttpMethod.GET, request, new ParameterizedTypeReference<Page<Workflow>>() {}).getBody());
@@ -266,45 +271,61 @@ public class AutoRetouchClient {
     }
 
     public static class Builder {
-        private String userAgent;
-        private Integer pinnedVersion = null;
-        private RestTemplate restTemplate = null;
+        private Optional<String> userAgent = Optional.empty();
+        private Optional<Integer> pinnedVersion = Optional.empty();
+        private Optional<RestTemplate> restTemplate = Optional.empty();
+        private Optional<String> apiServer = Optional.empty();
+        private Optional<String> authServer = Optional.empty();
+        private Optional<String> accessToken = Optional.empty();
+
         public Builder pinToVersion(int version) {
-            pinnedVersion = version;
+            pinnedVersion = Optional.of(version);
             return this;
         }
 
         public Builder useLatestVersion() {
-            pinnedVersion = null;
+            pinnedVersion = Optional.empty();
             return this;
         }
 
         public Builder useRestTemplate(RestTemplate restTemplate) {
-            this.restTemplate = restTemplate;
+            this.restTemplate = Optional.ofNullable(restTemplate);
             return this;
         }
 
         public Builder userAgent(String userAgent) {
-            this.userAgent = userAgent;
+            this.userAgent = Optional.ofNullable(userAgent);
+            return this;
+        }
+
+        public Builder apiServer(String apiServer) {
+            this.apiServer = Optional.ofNullable(apiServer);
+            return this;
+        }
+
+        public Builder authServer(String authServer) {
+            this.authServer = Optional.ofNullable(authServer);
+            return this;
+        }
+
+        public Builder accessToken(String accessToken) {
+            this.accessToken = Optional.ofNullable(accessToken);
             return this;
         }
 
         public AutoRetouchClient build() {
-            if (restTemplate == null) {
-                restTemplate = new RestTemplate();
-            }
-            if (this.userAgent != null) {
-                restTemplate.getInterceptors().add((request, body, execution) -> {
-                    request.getHeaders().set("User-Agent", userAgent);
+            RestTemplate restClient = restTemplate.orElse(new RestTemplate());
+            userAgent.ifPresent(agent -> {
+                restClient.getInterceptors().add((request, body, execution) -> {
+                    request.getHeaders().set("User-Agent", agent);
                     return execution.execute(request, body);
                 });
-            }
-            AutoRetouchClient client = new AutoRetouchClient(restTemplate);
-            if (this.pinnedVersion != null) {
-                client.pinToVersion(this.pinnedVersion);
-            } else {
-                client.useLatestVersion();
-            }
+            });
+            AutoRetouchClient client = new AutoRetouchClient(restClient);
+            apiServer.ifPresent(client::withApiServer);
+            authServer.ifPresent(client::withAuthServer);
+            pinnedVersion.ifPresent(client::pinToVersion);
+            accessToken.ifPresent(client::withAccessToken);
             return client;
         }
     }

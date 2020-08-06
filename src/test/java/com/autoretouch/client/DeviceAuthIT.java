@@ -58,7 +58,7 @@ public class DeviceAuthIT {
 
     public static AutoRetouchClient createOrGetClient() throws IOException {
         if (instance == null) {
-            instance = new AutoRetouchClient();
+            instance = AutoRetouchClient.builder().userAgent("sampleJavaApiClient").build();
             if ("development".equalsIgnoreCase(System.getenv("env"))) {
                 instance.useDevelopmentEnvironment();
             }

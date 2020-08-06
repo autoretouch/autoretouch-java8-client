@@ -9,6 +9,9 @@ import com.autoretouch.client.model.WorkflowExecution;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.*;
+import org.springframework.http.client.ClientHttpRequestExecution;
+import org.springframework.http.client.ClientHttpRequestInterceptor;
+import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.util.StreamUtils;
@@ -28,7 +31,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 public class AutoRetouchClient {
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final RestTemplate restTemplate;
 
     private String apiServer = "https://api.autoretouch.com";
     private String authServer = "https://auth.autoretouch.com/";
@@ -43,6 +46,11 @@ public class AutoRetouchClient {
     public int refreshInterval = -1;
 
     public AutoRetouchClient() {
+        restTemplate = new RestTemplate();
+    }
+
+    private AutoRetouchClient(RestTemplate restTemplate) {
+        this.restTemplate = restTemplate;
     }
 
     public AutoRetouchClient pinToVersion(int version) {
@@ -248,7 +256,9 @@ public class AutoRetouchClient {
     }
 
     public static class Builder {
+        private String userAgent;
         private Integer pinnedVersion = null;
+        private RestTemplate restTemplate = null;
         public Builder pinToVersion(int version) {
             pinnedVersion = version;
             return this;
@@ -259,8 +269,27 @@ public class AutoRetouchClient {
             return this;
         }
 
+        public Builder useRestTemplate(RestTemplate restTemplate) {
+            this.restTemplate = restTemplate;
+            return this;
+        }
+
+        public Builder userAgent(String userAgent) {
+            this.userAgent = userAgent;
+            return this;
+        }
+
         public AutoRetouchClient build() {
-            AutoRetouchClient client = new AutoRetouchClient();
+            if (restTemplate == null) {
+                restTemplate = new RestTemplate();
+            }
+            if (this.userAgent != null) {
+                restTemplate.getInterceptors().add((request, body, execution) -> {
+                    request.getHeaders().set("User-Agent", userAgent);
+                    return execution.execute(request, body);
+                });
+            }
+            AutoRetouchClient client = new AutoRetouchClient(restTemplate);
             if (this.pinnedVersion != null) {
                 client.pinToVersion(this.pinnedVersion);
             } else {

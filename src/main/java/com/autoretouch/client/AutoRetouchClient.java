@@ -3,6 +3,7 @@ package com.autoretouch.client;
 import com.autoretouch.client.auth.AuthResponse;
 import com.autoretouch.client.auth.DeviceAuthorization;
 import com.autoretouch.client.auth.GetDeviceCodeResponse;
+import com.autoretouch.client.model.Organization;
 import com.autoretouch.client.model.Page;
 import com.autoretouch.client.model.Workflow;
 import com.autoretouch.client.model.WorkflowExecution;
@@ -87,7 +88,6 @@ public class AutoRetouchClient {
         }
         return this;
     }
-
 
     public boolean requestAuthToken() {
         if (this.accessToken == null && this.deviceCode != null) {
@@ -254,6 +254,13 @@ public class AutoRetouchClient {
     public Workflow getWorkflow(String workflowId) {
         HttpEntity<Void> request = new HttpEntity<>(createAuthorizedHeaders());
         return restTemplate.exchange(apiRoot() + "/workflow/" + workflowId + "/", HttpMethod.GET, request, Workflow.class).getBody();
+    }
+
+    public List<Organization> getMyOrganizations() {
+        HttpEntity<Void> request = new HttpEntity<>(createAuthorizedHeaders());
+        return restTemplate.exchange(apiRoot() + "/organization/", HttpMethod.GET, request, new ParameterizedTypeReference<Page<Organization>>(){})
+                .getBody()
+                .getEntries();
     }
 
     private HttpHeaders createAuthorizedHeaders() {
